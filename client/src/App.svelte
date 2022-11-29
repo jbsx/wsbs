@@ -3,11 +3,13 @@
     import Home from "./routes/home.svelte";
     import Register from "./routes/register.svelte";
     import Login from "./routes/login.svelte";
+    import Game from "./routes/game.svelte";
 
     let routes = {
         "/": Home,
         "/register": Register,
-        "/login": Login
+        "/login": Login,
+        "/game/:id": Game
     }
 </script>
 

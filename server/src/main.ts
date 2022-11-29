@@ -3,6 +3,7 @@ const cors = require("cors");
 const mysql = require("mysql");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const ws = require("ws");
 
 const JWT_PASS = "ASL;DFJAONO01)!(J#)*FJOAQFSJAOLIFJ)(Q!J@OIJ!#";
 
@@ -23,6 +24,17 @@ app.use(cors());
 app.use(express.json());
 const port = 4000;
 
+//Websocket
+const wsserver = new ws.WebSocketServer(
+    {
+        server: require("http").createServer(app),
+    },
+    () => {
+        console.log("client connected");
+    },
+);
+
+// Register
 app.post("/register", async (req: any, res: any) => {
     const { username, password } = req.body;
 
@@ -56,6 +68,7 @@ app.post("/register", async (req: any, res: any) => {
     );
 });
 
+// Login
 app.post("/login", async (req: any, res: any) => {
     const { username, password } = req.body;
     connection.query(
@@ -102,8 +115,6 @@ app.post("/login", async (req: any, res: any) => {
         },
     );
 });
-
-app.post("logout", (req: any, res: any) => {});
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
