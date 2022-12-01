@@ -32,9 +32,10 @@ export default class Piece {
         this.piecetype = piecetype;
         this.value = pieceval[piecetype];
     }
-    //test function
-    log() {
-        console.log(this.team, this.piecetype, this.value);
-    }
+    getType() { return this.piecetype; }
+    getTeam() { return this.team; }
+    getValue() { return this.value; }
+    // test function
+    log() { console.log(this.team, this.piecetype, this.value); }
 }
 //# sourceMappingURL=chesspiece.js.map
