@@ -1,51 +1,58 @@
 <script lang="ts">
-    import Chess from "../game/chess.js";
+    import Chess from "../game/chess";
 
     let chess = new Chess();
-    chess.log();
 
-    function render(x: number, y: number){
-        let piece = chess.get(x,y);
+    $: renderBuffer = {};
+    $: board = chess.getboard();
+
+    $: render = (x: number, y: number) => {
+        let piece = board[x][y];
         if (!piece){
             return "";
         }
-        return `../../public/${piece.getTeam()}_${piece.getType()}.svg`;
+        return `../${piece.getTeam()}_${piece.getType()}.svg`;
     }
 
-    function run(){
-        chess.move(1, 5, 2, 5);
-        chess.log();
+    $: selected = null;
+
+    $: err = null;
+    $: move = (x: number, y: number) => {
+        if (!selected){
+            renderBuffer[`${x}-${y}`].classList.add("selected");
+            selected = [x, y];
+            return;
+        }
+        err = chess.move(selected[0], selected[1], x, y);
+
+        renderBuffer[`${selected[0]}-${selected[1]}`].classList.remove("selected");
+
+        selected = null
+        board = chess.getboard();
     }
 </script>
 
 <main>
-    <button on:click={()=>{run()}}>run</button>
     <div id="chessboard">
         {#each Array(8) as _, i}
             <div class="chesspad row row-{i}">
                 {#each Array(8) as _, j}
                     {#if (i+j)%2 == 0}
-                        <div class="chesspad white column column-{j}" id="{i}-{j}"><img alt="" src={render(i, j)}/></div>
+                        <div class="chesspad white" id="{7-i}-{7-j}" on:click={()=>{move(7-i, 7-j)}} bind:this={renderBuffer[`${7-i}-${7-j}`]}><img alt="" src={render(7-i, 7-j)}/></div>
                     {:else}
-                        <div class="chesspad black column column-{j}" id="{i}-{j}"><img alt="" src={render(i, j)}/></div>
+                        <div class="chesspad black" id="{7-i}-{7-j}" on:click={()=>{move(7-i, 7-j)}} bind:this={renderBuffer[`${7-i}-${7-j}`]}><img alt="" src={render(7-i, 7-j)}/></div>
                     {/if}
                 {/each}
             </div>
         {/each}
     </div>
+    <span>{err}</span>
 </main>
 
 <style>
-    *{
+    #chessboard{
         margin: 0%;
         padding: 0%;
-    }
-    #chessboard{
-        height: 660px;
-        width: 660px;
-        padding-left: 20px;
-        padding-bottom: 20px;
-        background-color: green;
     }
     .chesspad{
         height: 80px;
@@ -55,12 +62,15 @@
         align-items: center;
     }
     .black{
-        background-color: goldenrod;
+        background-color: peru;
     }
     .white{
-        background-color: whitesmoke;
+        background-color: tan;
     }
     .row{
         display: flex;
+    }
+    .selected{
+        background-color: olive;
     }
 </style>

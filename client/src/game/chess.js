@@ -22,12 +22,29 @@ export default class Chess {
         this.board[7][4] = new Piece("BLACK", "King");
         this.board[6] = new Array(8).fill(new Piece("BLACK", "Pawn"));
     }
-    get(x, y) { return this.board[x][y]; }
+    getboard() {
+        return this.board;
+    }
+    get(x, y) {
+        return this.board[x][y];
+    }
     move(x1, y1, x2, y2) {
+        if (!this.check(x1, y1, x2, y2)) {
+            return 'Try again';
+        }
         this.board[x2][y2] = this.board[x1][y1];
         this.board[x1][y1] = null;
+        return null;
+    }
+    check(x1, y1, x2, y2) {
+        if (this.board[x1][y1] == null) {
+            return false;
+        }
+        return true;
     }
     // Test function
-    log() { console.log(this.board); }
+    log() {
+        console.log(this.board);
+    }
 }
 //# sourceMappingURL=chess.js.map
