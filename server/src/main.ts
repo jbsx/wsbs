@@ -1,13 +1,14 @@
-const express = require("express");
-const cors = require("cors");
-const mysql = require("mysql");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const ws = require("ws");
+import express from "express";
+import cors from "cors";
+import mysql from "mysql";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
+import ws from "ws";
 
 const JWT_PASS = "ASL;DFJAONO01)!(J#)*FJOAQFSJAOLIFJ)(Q!J@OIJ!#";
 
-//Database
+// Database
 const connection = mysql.createConnection({
     host: "localhost",
     user: "root",
@@ -16,15 +17,16 @@ const connection = mysql.createConnection({
 });
 
 connection.connect();
-//connection.end();
+// connection.end();
 
-//Server
+// Server
 const app = express();
+app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
 const port = 4000;
 
-//Websocket
+// Websocket
 const wsserver = new ws.WebSocketServer(
     {
         server: require("http").createServer(app),
@@ -34,12 +36,27 @@ const wsserver = new ws.WebSocketServer(
     },
 );
 
+// Middlewares
+function authenticateToken(req: any, res: any, next: any) {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    jwt.verify(token, JWT_PASS, (err: any, user: any) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+}
+
 // Register
 app.post("/register", async (req: any, res: any) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-        res.json({ status: "error", error: "Invalid Username or Password" });
+        return res.json({
+            status: "error",
+            error: "Invalid Username or Password",
+        });
     }
 
     // TODO username and password edge cases
@@ -54,15 +71,15 @@ app.post("/register", async (req: any, res: any) => {
                 console.log(JSON.stringify(error));
 
                 if (error["code"] === "ER_DUP_ENTRY") {
-                    res.json({
-                        status: "error",
-                        error: "Username already in use",
+                    return res.status(401).json({
+                        status: "401",
+                        message: "Username already in use",
                     });
                 } else {
                     throw error;
                 }
             } else {
-                res.json({ status: "ok" });
+                return res.status(200).json({ message: "Successful" });
             }
         },
     );
@@ -80,7 +97,7 @@ app.post("/login", async (req: any, res: any) => {
             }
 
             if (results.length !== 1) {
-                return res.json({
+                return res.status(403).json({
                     status: "error",
                     message: "Invalid Username or Password",
                 });
@@ -93,10 +110,9 @@ app.post("/login", async (req: any, res: any) => {
                 const valid_password = await bcrypt.compare(password, resPass);
 
                 if (!valid_password) {
-                    return res.json({
-                        status: "error",
-                        message: "Invalid Username or Password",
-                    });
+                    return res
+                        .status(401)
+                        .json({ message: "Incorrect password" });
                 } else {
                     const token = jwt.sign(
                         {
@@ -106,14 +122,25 @@ app.post("/login", async (req: any, res: any) => {
                         JWT_PASS,
                     );
 
-                    return res.json({
-                        status: "ok",
-                        data: token,
-                    });
+                    return (
+                        res
+                            //.cookie("token", token, {
+                            //    expires: new Date(Date.now() + 9999999),
+                            //    httpOnly: false,
+                            //})
+                            .json({
+                                status: "ok",
+                                data: token,
+                            })
+                    );
                 }
             }
         },
     );
+});
+
+app.get("/hello", authenticateToken, (req: any, res: any) => {
+    return res.sendStatus(200);
 });
 
 app.listen(port, () => {

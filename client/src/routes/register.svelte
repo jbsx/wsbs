@@ -1,10 +1,11 @@
 <script lang='ts'>
+    $: err = '';
     async function registerUser(e: any) {
-          e.preventDefault();
-          const username = document.getElementById("username")["value"];
-          const password = document.getElementById("password")["value"];
+        e.preventDefault();
+        const username = document.getElementById("username")["value"];
+        const password = document.getElementById("password")["value"];
 
-          const res = await fetch( "http://localhost:4000/register", {
+        const res = await fetch( "http://localhost:4000/register", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -13,9 +14,23 @@
                 username,
                 password
             })
-          }).then( res => {
-            console.log(res.json);
-          });
+        })
+
+        if (res.ok){
+            await fetch( "http://localhost:4000/login", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username,
+                    password
+                })
+            });
+            window.location.assign('/#/');
+        } else {
+            err = "Something went wrong";
+        }
     }
 </script>
 
@@ -30,4 +45,5 @@
         <br/>
         <input type="submit" value="Register"/>
     </form>
+    <span>{err}</span>
 </main>
