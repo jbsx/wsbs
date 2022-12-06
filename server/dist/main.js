@@ -41,6 +41,9 @@ const wsserver = new ws_1.default.WebSocketServer({
 }, () => {
     console.log("client connected");
 });
+wsserver.on("message", (message) => {
+    console.log(message);
+});
 // Middlewares
 function authenticateToken(req, res, next) {
     const token = req.cookies.token;
@@ -122,7 +125,7 @@ app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         }
     }));
 }));
-app.get("/hello", authenticateToken, (req, res) => {
+app.post("/game/chess", authenticateToken, (req, res) => {
     return res.sendStatus(200);
 });
 app.listen(port, () => {

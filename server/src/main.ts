@@ -36,6 +36,10 @@ const wsserver = new ws.WebSocketServer(
     },
 );
 
+wsserver.on("message", (message) => {
+    console.log(message);
+});
+
 // Middlewares
 function authenticateToken(req: any, res: any, next: any) {
     const token = req.cookies.token;
@@ -139,7 +143,7 @@ app.post("/login", async (req: any, res: any) => {
     );
 });
 
-app.get("/hello", authenticateToken, (req: any, res: any) => {
+app.post("/game/chess", authenticateToken, (req: any, res: any) => {
     return res.sendStatus(200);
 });
 

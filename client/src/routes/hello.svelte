@@ -1,17 +1,21 @@
 <script lang='ts'>
     function run(){
-        fetch("http://localhost:4000/hello", {
-            method: "GET",
-            credentials: 'include'
-        }).then(res => {
-            console.log(res);
+        // Create WebSocket connection.
+        const socket = new WebSocket('ws://localhost:4000');
+
+        // Connection opened
+        socket.addEventListener('open', (event) => {
+            socket.send('Hello Server!');
         });
+
+        // Listen for messages
+        socket.addEventListener('message', (event) => {
+            console.log('Message from server ', event.data);
+        });
+
     }
 </script>
 
 <main>
-    <button on:click={()=>{run()}}>LES GO</button>
-    <br/>
-    <br/>
-    <button on:click={()=>{window.location.assign("/#/login")}}>Hello</button>
+    <button on:click={()=>{run()}}>send it</button>
 </main>
