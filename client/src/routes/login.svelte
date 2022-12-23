@@ -4,22 +4,19 @@
         const username = document.getElementById("username")["value"];
         const password = document.getElementById("password")["value"];
 
-        const res = await fetch( "http://localhost:4000/login", {
-            method: 'POST',
+        let res = await fetch( "http://localhost:4000/login", {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
             },
+            credentials: "include",
             body: JSON.stringify({
                 username,
                 password
-            }),
-        }).then( async res => {
-            if (res.status === 200){
-                const body = await res.json()
-                document.cookie = `token=${body.data}`
-            //window.location.assign("/#/");
-            }
+            })
         });
+        if (res.status === 200) window.location.assign("/#/")
     }
 </script>
 
@@ -34,7 +31,4 @@
         <br/>
         <input type="submit" value="Login"/>
     </form>
-    <br/>
-    <br/>
-    <button on:click={()=>{window.location.assign("/#/hello")}}>Hello</button>
 </main>

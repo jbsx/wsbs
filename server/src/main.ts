@@ -4,7 +4,9 @@ import mysql from "mysql";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import { v4 as uuidv4 } from "uuid";
 import ws from "ws";
+import Chess from "./game/chess";
 
 const JWT_PASS = "ASL;DFJAONO01)!(J#)*FJOAQFSJAOLIFJ)(Q!J@OIJ!#";
 
@@ -21,28 +23,29 @@ connection.connect();
 
 // Server
 const app = express();
-app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 const port = 4000;
 
 // Websocket
-const wsserver = new ws.WebSocketServer(
-    {
-        server: require("http").createServer(app),
-    },
-    () => {
-        console.log("client connected");
-    },
-);
+let connections = new Map();
+let games = new Map();
 
-wsserver.on("message", (message) => {
-    console.log(message);
+const wss = new ws.WebSocketServer({ port: 8080 });
+
+wss.on("connection", function connection(wsocket) {
+    wsocket.send("Connected to server");
+    wsocket.on("message", function message(data) {
+        console.log(data);
+        wsocket.send("asfdasfd");
+    });
 });
 
 // Middlewares
 function authenticateToken(req: any, res: any, next: any) {
-    const token = req.cookies.token;
+    const token = req.cookies.access_token;
+
     if (!token) return res.sendStatus(401);
 
     jwt.verify(token, JWT_PASS, (err: any, user: any) => {
@@ -94,7 +97,7 @@ app.post("/login", async (req: any, res: any) => {
     const { username, password } = req.body;
     connection.query(
         `SELECT * FROM User WHERE Username='${username}'`,
-        async (error: any, results: any, fields: any) => {
+        async (error: any, results: any) => {
             if (error) {
                 console.log(error);
                 throw error;
@@ -126,27 +129,39 @@ app.post("/login", async (req: any, res: any) => {
                         JWT_PASS,
                     );
 
-                    return (
-                        res
-                            //.cookie("token", token, {
-                            //    expires: new Date(Date.now() + 9999999),
-                            //    httpOnly: false,
-                            //})
-                            .json({
-                                status: "ok",
-                                data: token,
-                            })
-                    );
+                    return res
+                        .cookie("access_token", token, {
+                            httpOnly: true,
+                            sameSite: "None",
+                            secure: true,
+                        })
+                        .json({
+                            status: "ok",
+                        });
                 }
             }
         },
     );
 });
 
-app.post("/game/chess", authenticateToken, (req: any, res: any) => {
-    return res.sendStatus(200);
+app.get("/game/chess", authenticateToken, (req: any, res: any) => {
+    let id = uuidv4();
+    games.set(id, [new Chess(), []]);
+    //console.log(games.get(id));
+    console.log(id);
+
+    return res.json({
+        status: "ok",
+        id,
+        message: `Game created successfully`,
+    });
+});
+
+app.get("/game/join/:id", authenticateToken, (req: any, res: any) => {
+    console.log(req.params["id"]);
+    res.send("hello");
 });
 
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
+    console.log(`Express app listening on port ${port}`);
 });
