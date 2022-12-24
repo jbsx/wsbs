@@ -1,14 +1,17 @@
 import express from "express";
+import expressWs from "express-ws";
 import cors from "cors";
 import mysql from "mysql";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import { v4 as uuidv4 } from "uuid";
-import ws from "ws";
 import Chess from "./game/chess";
 
-const JWT_PASS = "ASL;DFJAONO01)!(J#)*FJOAQFSJAOLIFJ)(Q!J@OIJ!#";
+require("dotenv").config();
+const JWT_PASS = process.env.JWT_PASS
+    ? process.env.JWT_PASS
+    : "8=============D";
 
 // Database
 const connection = mysql.createConnection({
@@ -22,7 +25,7 @@ connection.connect();
 // connection.end();
 
 // Server
-const app = express();
+let { app } = expressWs(express());
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
@@ -32,19 +35,18 @@ const port = 4000;
 let connections = new Map();
 let games = new Map();
 
-const wss = new ws.WebSocketServer({ port: 8080 });
-
-wss.on("connection", function connection(wsocket) {
-    wsocket.send("Connected to server");
-    wsocket.on("message", function message(data) {
+app.ws("/cum", authenticateToken, (ws, res) => {
+    console.log("from connection");
+    ws.send("Connected to server");
+    ws.on("message", function message(data) {
         console.log(data);
-        wsocket.send("asfdasfd");
+        ws.send("pinging back from ws server");
     });
 });
 
-// Middlewares
 function authenticateToken(req: any, res: any, next: any) {
     const token = req.cookies.access_token;
+    console.log(token);
 
     if (!token) return res.sendStatus(401);
 
@@ -55,7 +57,6 @@ function authenticateToken(req: any, res: any, next: any) {
     });
 }
 
-// Register
 app.post("/register", async (req: any, res: any) => {
     const { username, password } = req.body;
 
@@ -92,7 +93,6 @@ app.post("/register", async (req: any, res: any) => {
     );
 });
 
-// Login
 app.post("/login", async (req: any, res: any) => {
     const { username, password } = req.body;
     connection.query(
@@ -145,21 +145,14 @@ app.post("/login", async (req: any, res: any) => {
 });
 
 app.get("/game/chess", authenticateToken, (req: any, res: any) => {
-    let id = uuidv4();
+    const id = uuidv4();
     games.set(id, [new Chess(), []]);
-    //console.log(games.get(id));
-    console.log(id);
 
     return res.json({
         status: "ok",
         id,
         message: `Game created successfully`,
     });
-});
-
-app.get("/game/join/:id", authenticateToken, (req: any, res: any) => {
-    console.log(req.params["id"]);
-    res.send("hello");
 });
 
 app.listen(port, () => {

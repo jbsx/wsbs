@@ -13,15 +13,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const express_ws_1 = __importDefault(require("express-ws"));
 const cors_1 = __importDefault(require("cors"));
 const mysql_1 = __importDefault(require("mysql"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const uuid_1 = require("uuid");
-const ws_1 = __importDefault(require("ws"));
 const chess_1 = __importDefault(require("./game/chess"));
-const JWT_PASS = "ASL;DFJAONO01)!(J#)*FJOAQFSJAOLIFJ)(Q!J@OIJ!#";
+require("dotenv").config();
+const JWT_PASS = process.env.JWT_PASS
+    ? process.env.JWT_PASS
+    : "8=============D";
 // Database
 const connection = mysql_1.default.createConnection({
     host: "localhost",
@@ -32,7 +35,7 @@ const connection = mysql_1.default.createConnection({
 connection.connect();
 // connection.end();
 // Server
-const app = (0, express_1.default)();
+let { app } = (0, express_ws_1.default)((0, express_1.default)());
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
@@ -40,17 +43,17 @@ const port = 4000;
 // Websocket
 let connections = new Map();
 let games = new Map();
-const wss = new ws_1.default.WebSocketServer({ port: 8080 });
-wss.on("connection", function connection(wsocket) {
-    wsocket.send("Connected to server");
-    wsocket.on("message", function message(data) {
+app.ws("/cum", authenticateToken, (ws, res) => {
+    console.log("from connection");
+    ws.send("Connected to server");
+    ws.on("message", function message(data) {
         console.log(data);
-        wsocket.send("asfdasfd");
+        ws.send("pinging back from ws server");
     });
 });
-// Middlewares
 function authenticateToken(req, res, next) {
     const token = req.cookies.access_token;
+    console.log(token);
     if (!token)
         return res.sendStatus(401);
     jsonwebtoken_1.default.verify(token, JWT_PASS, (err, user) => {
@@ -60,7 +63,6 @@ function authenticateToken(req, res, next) {
         next();
     });
 }
-// Register
 app.post("/register", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -88,7 +90,6 @@ app.post("/register", (req, res) => __awaiter(void 0, void 0, void 0, function* 
         }
     });
 }));
-// Login
 app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, password } = req.body;
     connection.query(`SELECT * FROM User WHERE Username='${username}'`, (error, results) => __awaiter(void 0, void 0, void 0, function* () {
@@ -116,12 +117,13 @@ app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                     userid: results[0]["UserId"],
                     username: resUser,
                 }, JWT_PASS);
-                res.cookie("access_token", token, {
+                return res
+                    .cookie("access_token", token, {
                     httpOnly: true,
                     sameSite: "None",
                     secure: true,
-                });
-                return res.json({
+                })
+                    .json({
                     status: "ok",
                 });
             }
@@ -129,19 +131,13 @@ app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }));
 }));
 app.get("/game/chess", authenticateToken, (req, res) => {
-    let id = (0, uuid_1.v4)();
+    const id = (0, uuid_1.v4)();
     games.set(id, [new chess_1.default(), []]);
-    //console.log(games.get(id));
-    console.log(id);
     return res.json({
         status: "ok",
         id,
         message: `Game created successfully`,
     });
-});
-app.get("/game/join/:id", authenticateToken, (req, res) => {
-    console.log(req.params["id"]);
-    res.send("hello");
 });
 app.listen(port, () => {
     console.log(`Express app listening on port ${port}`);

@@ -1,76 +1,39 @@
 <script lang="ts">
-    import Chess from "../game/chess";
+    const id = window.location.hash.split('/')[window.location.hash.split('/').length-1]
 
-    let chess = new Chess();
+    let socket = null;
 
-    $: renderBuffer = {};
-    $: board = chess.getboard();
+    // Create WebSocket connection.
+    socket = new WebSocket('ws://localhost:4000/cum'); // send jwt token cookie on websocket handshake???
 
-    $: render = (x: number, y: number) => {
-        let piece = board[x][y];
-        if (!piece){
-            return "";
+    socket.onopen = (bruh)=>{
+        console.log(bruh)
+        socket.send('Hello Server!');
+    }
+    console.log(socket)
+    // Connection opened
+    socket.addEventListener('open', (event) => {
+        socket.send('Hello Server!');
+    });
+
+    // Listen for messages
+    socket.addEventListener('message', (event) => {
+        console.log('Message from server ', event.data);
+    });
+
+    function run(){
+        if (!socket) {
+            console.log('no websocket connection')
+            return
         }
-        return `../${piece.getTeam()}_${piece.getType()}.svg`;
+        socket.send('asdf')
     }
 
-    $: selected = null;
-
-    $: err = null;
-    $: move = (x: number, y: number) => {
-        if (!selected){
-            renderBuffer[`${x}-${y}`].classList.add("selected");
-            selected = [x, y];
-            return;
-        }
-        err = chess.move(selected[0], selected[1], x, y);
-
-        renderBuffer[`${selected[0]}-${selected[1]}`].classList.remove("selected");
-
-        selected = null
-        board = chess.getboard();
-    }
 </script>
 
 <main>
-    <div id="chessboard">
-        {#each Array(8) as _, i}
-            <div class="chesspad row row-{i}">
-                {#each Array(8) as _, j}
-                    {#if (i+j)%2 == 0}
-                        <div class="chesspad white" id="{7-i}-{7-j}" on:click={()=>{move(7-i, 7-j)}} bind:this={renderBuffer[`${7-i}-${7-j}`]}><img alt="" src={render(7-i, 7-j)}/></div>
-                    {:else}
-                        <div class="chesspad black" id="{7-i}-{7-j}" on:click={()=>{move(7-i, 7-j)}} bind:this={renderBuffer[`${7-i}-${7-j}`]}><img alt="" src={render(7-i, 7-j)}/></div>
-                    {/if}
-                {/each}
-            </div>
-        {/each}
-    </div>
-    <span>{err}</span>
+    <button on:click={()=>{run()}}>Send message to server</button>
 </main>
 
 <style>
-    #chessboard{
-        margin: 0%;
-        padding: 0%;
-    }
-    .chesspad{
-        height: 80px;
-        min-width: 80px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    .black{
-        background-color: peru;
-    }
-    .white{
-        background-color: tan;
-    }
-    .row{
-        display: flex;
-    }
-    .selected{
-        background-color: olive;
-    }
 </style>
