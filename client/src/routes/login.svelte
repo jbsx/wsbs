@@ -7,8 +7,7 @@
         let res = await fetch( "http://localhost:4000/login", {
             method: "POST",
             headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
             credentials: "include",
             body: JSON.stringify({

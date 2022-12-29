@@ -13,18 +13,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const express_ws_1 = __importDefault(require("express-ws"));
 const cors_1 = __importDefault(require("cors"));
 const mysql_1 = __importDefault(require("mysql"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const uuid_1 = require("uuid");
+const ws_1 = require("ws");
 const chess_1 = __importDefault(require("./game/chess"));
 require("dotenv").config();
 const JWT_PASS = process.env.JWT_PASS
     ? process.env.JWT_PASS
-    : "8=============D";
+    : "random characters OAOAOAoaoaoasdflkjasdfkljasdf";
 // Database
 const connection = mysql_1.default.createConnection({
     host: "localhost",
@@ -35,25 +35,14 @@ const connection = mysql_1.default.createConnection({
 connection.connect();
 // connection.end();
 // Server
-let { app } = (0, express_ws_1.default)((0, express_1.default)());
-app.use((0, cors_1.default)());
+let app = (0, express_1.default)();
+app.use((0, cors_1.default)({ origin: true, credentials: true }));
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
 const port = 4000;
-// Websocket
-let connections = new Map();
 let games = new Map();
-app.ws("/cum", authenticateToken, (ws, res) => {
-    console.log("from connection");
-    ws.send("Connected to server");
-    ws.on("message", function message(data) {
-        console.log(data);
-        ws.send("pinging back from ws server");
-    });
-});
 function authenticateToken(req, res, next) {
     const token = req.cookies.access_token;
-    console.log(token);
     if (!token)
         return res.sendStatus(401);
     jsonwebtoken_1.default.verify(token, JWT_PASS, (err, user) => {
@@ -132,13 +121,98 @@ app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 }));
 app.get("/game/chess", authenticateToken, (req, res) => {
     const id = (0, uuid_1.v4)();
-    games.set(id, [new chess_1.default(), []]);
+    games.set(id, {
+        board: new chess_1.default(),
+        players: [],
+    });
     return res.json({
         status: "ok",
         id,
         message: `Game created successfully`,
     });
 });
-app.listen(port, () => {
+// Websocket
+const wss = new ws_1.WebSocketServer({ clientTracking: false, noServer: true });
+const server = require("http").createServer(app);
+server.on("upgrade", function (req, socket, head) {
+    //Parse cookies
+    let cookies = null;
+    for (let i = 0; i < req.rawHeaders.length; i++) {
+        if (req.rawHeaders[i] == "Cookie")
+            cookies = req.rawHeaders[i + 1];
+    }
+    if (!cookies) {
+        socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+        socket.destroy();
+        return;
+    }
+    let token = null;
+    cookies.split("; ").forEach((i) => {
+        const temp = i.split("=");
+        if (temp[0] == "access_token")
+            token = temp[1];
+    });
+    if (!token) {
+        socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+        socket.destroy();
+        return;
+    }
+    let username = undefined;
+    //Authenticate Token
+    jsonwebtoken_1.default.verify(token, JWT_PASS, (err, user) => {
+        if (err) {
+            socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+            socket.destroy();
+            return;
+        }
+        username = user.username;
+    });
+    wss.handleUpgrade(req, socket, head, function (ws) {
+        wss.emit("connection", ws, username, req);
+    });
+});
+wss.on("connection", (ws, username, req) => {
+    let id = req.url ? req.url.slice(1, req.url.length) : undefined;
+    if (!id)
+        return; //invalid
+    let game = games.get(id);
+    if (!game)
+        return; //not live (either past game or invalid)
+    if (!game.players.some((user) => {
+        return user.username === username;
+    }) //if not in game
+    ) {
+        if (game.players.length === 0)
+            game.players.push({ username, team: "W", ws });
+        else if (game.players.length === 1)
+            game.players.push({ username, team: "B", ws });
+        else {
+            return; //too many players
+        }
+    }
+    ws.send(username);
+    game.players.forEach((user) => {
+        if (user.username === username)
+            user.ws = ws; //update connection on page reload
+        let res = "players ";
+        game.players.forEach((i) => {
+            res += `${i.username},${i.team}/`;
+        });
+        user.ws.send(res);
+    });
+    ws.send(`initialRender ${game.board.print()}`);
+    ws.on("message", (message) => {
+        let mes = "";
+        message.forEach((i) => (mes += String.fromCharCode(i)));
+        const values = mes.split(" ");
+        if (values[0] === "move") {
+            if (game.players[0].username === username)
+                game.board.move(values[1], "W");
+            else if (game.players[1].username === username)
+                game.board.move(values[1], "B");
+        }
+    });
+});
+server.listen(port, () => {
     console.log(`Express app listening on port ${port}`);
 });

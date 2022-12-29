@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const chesspiece_1 = __importDefault(require("./chesspiece"));
 class Chess {
     constructor() {
+        this.turn = "W";
         // Create empty board
         this.board = new Array(8);
         for (let i = 0; i < 8; i++) {
@@ -32,20 +33,46 @@ class Chess {
     get(x, y) {
         return this.board[x][y];
     }
-    move(x1, y1, x2, y2) {
+    move(coords, by) {
+        if (this.turn !== by)
+            return "Waiting for the opponent to play their turn";
+        const [x1, y1] = this.parse(coords.split("-")[0]);
+        const [x2, y2] = this.parse(coords.split("-")[1]);
+        console.log(x1, y1, x2, y2);
         if (!this.check(x1, y1, x2, y2)) {
             return "Try again";
         }
         this.board[x2][y2] = this.board[x1][y1];
         this.board[x1][y1] = null;
-        return null;
+        this.turn = this.turn === "W" ? "B" : "W";
+        return "Great Success";
     }
     check(x1, y1, x2, y2) {
-        if (this.board[x1][y1] == null) {
+        console.log(x1, y1, x2, y2);
+        if (this.board[x1][y1] == null)
             return false;
-        }
+        //@ts-ignore
+        if (this.board[x1][y1].getTeam() !== this.turn)
+            return false;
         // TODO
         return true;
+    }
+    parse(coord) {
+        let res = [0, 0];
+        res[0] = 1 + +coord.charAt(1);
+        res[1] = coord.charCodeAt(0) - 97;
+        return res;
+    }
+    print() {
+        let res = "";
+        this.board.forEach((row) => {
+            row.forEach((cell) => {
+                if (cell)
+                    res += cell === null || cell === void 0 ? void 0 : cell.print();
+                res += ",";
+            });
+        });
+        return res.substring(0, res.length - 1);
     }
     // Test function
     log() {

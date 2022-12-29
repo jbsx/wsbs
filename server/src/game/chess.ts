@@ -2,6 +2,7 @@ import Piece from "./chesspiece";
 
 export default class Chess {
     private board: Array<Array<Piece | null>>;
+    private turn: string = "W";
 
     constructor() {
         // Create empty board
@@ -35,21 +36,49 @@ export default class Chess {
         return this.board[x][y];
     }
 
-    move(x1: number, y1: number, x2: number, y2: number): null | string {
+    move(coords: string, by: string): string {
+        if (this.turn !== by)
+            return "Waiting for the opponent to play their turn";
+
+        const [x1, y1] = this.parse(coords.split("-")[0]);
+        const [x2, y2] = this.parse(coords.split("-")[1]);
+        console.log(x1, y1, x2, y2);
         if (!this.check(x1, y1, x2, y2)) {
             return "Try again";
         }
         this.board[x2][y2] = this.board[x1][y1];
         this.board[x1][y1] = null;
-        return null;
+        this.turn = this.turn === "W" ? "B" : "W";
+        return "Great Success";
     }
 
     check(x1: number, y1: number, x2: number, y2: number): boolean {
-        if (this.board[x1][y1] == null) {
-            return false;
-        }
+        console.log(x1, y1, x2, y2);
+        if (this.board[x1][y1] == null) return false;
+        //@ts-ignore
+        if (this.board[x1][y1].getTeam() !== this.turn) return false;
+
         // TODO
+
         return true;
+    }
+
+    parse(coord: string): [number, number] {
+        let res = [0, 0];
+        res[0] = 1 + +coord.charAt(1);
+        res[1] = coord.charCodeAt(0) - 97;
+        return res as [number, number];
+    }
+
+    print(): string {
+        let res = "";
+        this.board.forEach((row) => {
+            row.forEach((cell) => {
+                if (cell) res += cell?.print();
+                res += ",";
+            });
+        });
+        return res.substring(0, res.length - 1);
     }
 
     // Test function

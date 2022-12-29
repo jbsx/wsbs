@@ -1,39 +1,109 @@
 <script lang="ts">
-    const id = window.location.hash.split('/')[window.location.hash.split('/').length-1]
+    export let params: any;
+    const id = params.id;
 
-    let socket = null;
+    let socket = new WebSocket(`ws://localhost:4000/${id}`);
+    let user:{[k:string]: any} = {};
+    let players = [];
+    let waiting = null;
+    let render = {}
+    let chessboard = null;
 
-    // Create WebSocket connection.
-    socket = new WebSocket('ws://localhost:4000/cum'); // send jwt token cookie on websocket handshake???
+    socket.addEventListener("message", (message: any)=>{
+        const data = message.data.split(' ');
 
-    socket.onopen = (bruh)=>{
-        console.log(bruh)
-        socket.send('Hello Server!');
-    }
-    console.log(socket)
-    // Connection opened
-    socket.addEventListener('open', (event) => {
-        socket.send('Hello Server!');
-    });
-
-    // Listen for messages
-    socket.addEventListener('message', (event) => {
-        console.log('Message from server ', event.data);
-    });
-
-    function run(){
-        if (!socket) {
-            console.log('no websocket connection')
-            return
+        if (data.length === 1){
+            user.username = data[0]; //set user
+        } else if (data[0] === 'players'){
+            const users = data[1].split('/')
+            users.pop();
+            users.forEach((u:any)=>{
+                const values = u.split(',')
+                if (values[0] === user.username) {
+                    user.team = values[1]
+                }
+            })
+            players = users
+            if (players.length === 2) {
+                waiting.style = "visibility: hidden"
+                chessboard.style = "visibility: visible"
+            }
+            
+        } else if (data[0] === 'initialRender'){
+            data[1].split(",").forEach((i: any, idx: any)=>{
+                if (!i) return
+                idx++
+                const column = String.fromCharCode(97 + (idx-1)%8);
+                const row = Math.ceil(idx/8);
+                render[esrap(`${column}${row}`)].style = `background-image: url(\"${i}.svg\")`
+            });
         }
-        socket.send('asdf')
+    });
+
+    let selected = undefined;
+
+    function parse(input: string){ 
+        if ( user.team === "W" ){
+            return String.fromCharCode(+input.charAt(1) + 97) + (8-(+input.charAt(0))) 
+        }else if( user.team === "B" ){
+            return String.fromCharCode(104-(+input.charAt(1))) + (+input.charAt(0))
+        }
+    }
+
+    function esrap(input: string){
+        if ( user.team === "W" ){
+            return  (8 - (+input.charAt(1))).toString() + ((+input.charCodeAt(0) - 97)).toString()
+        } else if( user.team === "B" ){
+            return ((+input.charAt(1))-1).toString() + (104-(+input.charCodeAt(0))).toString()
+        }
+    }
+
+    function move(to: string){
+        if (!selected) return;
+        if (selected === to) return;
+        socket.send(`move ${selected}-${to} ${user.username}`)
     }
 
 </script>
 
 <main>
-    <button on:click={()=>{run()}}>Send message to server</button>
+    <span>{id}</span><br/><br/>
+    <span bind:this={waiting}>Waiting for players</span>
+    <div bind:this={chessboard} id="chessboard">
+        {#each Array(8) as _, i}
+            <div class="chesspad">
+                {#each Array(8) as _, j}
+                    {#if (i+j)%2 == 0}
+                        <div class="chesspad white" id="{`${i}${j}`}" bind:this={render[`${i}${j}`]} on:mousedown={()=>{selected = parse(`${i}${j}`)}} on:mouseup={()=>{move(parse(`${i}${j}`))}}></div>
+                    {:else}
+                        <div class="chesspad black" id="{`${i}${j}`}" bind:this={render[`${i}${j}`]} on:mousedown={()=>{selected = parse(`${i}${j}`)}} on:mouseup={()=>{move(parse(`${i}${j}`))}}></div>
+                    {/if}
+                {/each}
+            </div>
+        {/each}
+    </div>
 </main>
 
 <style>
+    #chessboard{
+        user-select: none;
+        margin: 0%;
+        padding: 0%;
+        visibility: hidden;
+    }
+    .chesspad{
+        height: 80px;
+        min-width: 80px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /*background-image: url('BLACK_King.svg');*/
+        background-size: 100%;
+    }
+    .black{
+        background-color: steelblue;
+    }
+    .white{
+        background-color: lightsteelblue;
+    }
 </style>

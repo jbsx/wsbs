@@ -9,7 +9,6 @@ var Types;
     Types[Types["Queen"] = 4] = "Queen";
     Types[Types["King"] = 5] = "King";
 })(Types || (Types = {}));
-;
 const pieceval = {
     Pawn: 1,
     Knight: 3,
@@ -25,16 +24,33 @@ class Piece {
         this.value = pieceval[this.piecetype];
     }
     upgrade(piecetype) {
-        if (this.piecetype !== "Pawn" || piecetype === "King") {
+        if (this.piecetype !== "Pawn" ||
+            piecetype === "Pawn" ||
+            piecetype === "King") {
             return;
         }
         this.piecetype = piecetype;
         this.value = pieceval[piecetype];
     }
-    getType() { return this.piecetype; }
-    getTeam() { return this.team; }
-    getValue() { return this.value; }
+    getType() {
+        return this.piecetype;
+    }
+    getTeam() {
+        return this.team;
+    }
+    getValue() {
+        return this.value;
+    }
+    print() {
+        let res = this.team.charAt(0) + this.piecetype.charAt(0);
+        if (this.piecetype === "Knight") {
+            return res.replace(/k/gi, "N");
+        }
+        return res;
+    }
     // test function
-    log() { console.log(this.team, this.piecetype, this.value); }
+    log() {
+        console.log(this.team, this.piecetype, this.value);
+    }
 }
 exports.default = Piece;
