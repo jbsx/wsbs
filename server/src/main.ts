@@ -232,10 +232,17 @@ wss.on("connection", (ws: any, username: string | undefined, req: any) => {
         message.forEach((i: number) => (mes += String.fromCharCode(i)));
         const values = mes.split(" ");
         if (values[0] === "move") {
-            if (game.players[0].username === username)
-                game.board.move(values[1], "W");
-            else if (game.players[1].username === username)
-                game.board.move(values[1], "B");
+            let res = game.board.move(
+                values[1],
+                game.players[1].username === username ? "B" : "W",
+            );
+            if (res.split(" ")[0] == "moved") {
+                game.players.forEach((player: any) => {
+                    player.ws.send(res);
+                });
+            } else {
+                ws.send(res);
+            }
         }
     });
 });

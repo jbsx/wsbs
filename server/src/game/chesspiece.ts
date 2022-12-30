@@ -1,21 +1,21 @@
 enum Types {
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King,
+    P, //PAWN
+    N, //KNIGHT
+    B, //BISHOP
+    R, //ROOK
+    Q, //QUEEN
+    K, //KING
 }
 const pieceval = {
-    Pawn: 1,
-    Knight: 3,
-    Bishop: 3,
-    Rook: 5,
-    Queen: 9,
-    King: Infinity,
+    P: 1,
+    N: 3,
+    B: 3,
+    R: 5,
+    Q: 9,
+    K: Infinity,
 };
 
-type Team = "WHITE" | "BLACK";
+type Team = "W" | "B";
 type Type = keyof typeof Types;
 
 export default class Piece {
@@ -30,11 +30,7 @@ export default class Piece {
     }
 
     upgrade(piecetype: Type): void {
-        if (
-            this.piecetype !== "Pawn" ||
-            piecetype === "Pawn" ||
-            piecetype === "King"
-        ) {
+        if (this.piecetype !== "P" || piecetype === "P" || piecetype === "K") {
             return;
         }
 
@@ -55,11 +51,7 @@ export default class Piece {
     }
 
     print(): string {
-        let res = this.team.charAt(0) + this.piecetype.charAt(0);
-        if (this.piecetype === "Knight") {
-            return res.replace(/k/gi, "N");
-        }
-        return res;
+        return this.team + this.piecetype;
     }
     // test function
     log(): void {

@@ -37,6 +37,14 @@
                 const row = Math.ceil(idx/8);
                 render[esrap(`${column}${row}`)].style = `background-image: url(\"${i}.svg\")`
             });
+        } else if(data[0] === "moved"){
+            data.slice(1, data.length).forEach((coords: string)=>{
+                const values = coords.split('-')
+                render[esrap(values[1])].style.backgroundImage = render[esrap(values[0])].style.backgroundImage
+                render[esrap(values[0])].style = "";
+            })
+        } else {
+            console.log(data)
         }
     });
 
@@ -46,7 +54,7 @@
         if ( user.team === "W" ){
             return String.fromCharCode(+input.charAt(1) + 97) + (8-(+input.charAt(0))) 
         }else if( user.team === "B" ){
-            return String.fromCharCode(104-(+input.charAt(1))) + (+input.charAt(0))
+            return String.fromCharCode(104-(+input.charAt(1))) + ((+input.charAt(0)) + 1)
         }
     }
 
@@ -54,7 +62,7 @@
         if ( user.team === "W" ){
             return  (8 - (+input.charAt(1))).toString() + ((+input.charCodeAt(0) - 97)).toString()
         } else if( user.team === "B" ){
-            return ((+input.charAt(1))-1).toString() + (104-(+input.charCodeAt(0))).toString()
+            return ((+input.charAt(1)) - 1).toString() + (104-(+input.charCodeAt(0))).toString()
         }
     }
 

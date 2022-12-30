@@ -13,19 +13,25 @@ class Chess {
             this.board[i] = new Array(8).fill(null);
         }
         // Fill starting white pieces
-        this.board[0][0] = this.board[0][7] = new chesspiece_1.default("WHITE", "Rook");
-        this.board[0][1] = this.board[0][6] = new chesspiece_1.default("WHITE", "Knight");
-        this.board[0][2] = this.board[0][5] = new chesspiece_1.default("WHITE", "Bishop");
-        this.board[0][3] = new chesspiece_1.default("WHITE", "Queen");
-        this.board[0][4] = new chesspiece_1.default("WHITE", "King");
-        this.board[1] = new Array(8).fill(new chesspiece_1.default("WHITE", "Pawn"));
+        this.board[0][0] = new chesspiece_1.default("W", "R");
+        this.board[0][1] = new chesspiece_1.default("W", "N");
+        this.board[0][2] = new chesspiece_1.default("W", "B");
+        this.board[0][3] = new chesspiece_1.default("W", "Q");
+        this.board[0][4] = new chesspiece_1.default("W", "K");
+        this.board[0][5] = new chesspiece_1.default("W", "B");
+        this.board[0][6] = new chesspiece_1.default("W", "N");
+        this.board[0][7] = new chesspiece_1.default("W", "R");
+        this.board[1] = new Array(8).fill(new chesspiece_1.default("W", "P"));
         // Fill starting black pieces
-        this.board[7][0] = this.board[7][7] = new chesspiece_1.default("BLACK", "Rook");
-        this.board[7][1] = this.board[7][6] = new chesspiece_1.default("BLACK", "Knight");
-        this.board[7][2] = this.board[7][5] = new chesspiece_1.default("BLACK", "Bishop");
-        this.board[7][3] = new chesspiece_1.default("BLACK", "Queen");
-        this.board[7][4] = new chesspiece_1.default("BLACK", "King");
-        this.board[6] = new Array(8).fill(new chesspiece_1.default("BLACK", "Pawn"));
+        this.board[7][0] = new chesspiece_1.default("B", "R");
+        this.board[7][1] = new chesspiece_1.default("B", "N");
+        this.board[7][2] = new chesspiece_1.default("B", "B");
+        this.board[7][3] = new chesspiece_1.default("B", "Q");
+        this.board[7][4] = new chesspiece_1.default("B", "K");
+        this.board[7][5] = new chesspiece_1.default("B", "B");
+        this.board[7][6] = new chesspiece_1.default("B", "N");
+        this.board[7][7] = new chesspiece_1.default("B", "R");
+        this.board[6] = new Array(8).fill(new chesspiece_1.default("B", "P"));
     }
     getboard() {
         return this.board;
@@ -36,31 +42,37 @@ class Chess {
     move(coords, by) {
         if (this.turn !== by)
             return "Waiting for the opponent to play their turn";
-        const [x1, y1] = this.parse(coords.split("-")[0]);
-        const [x2, y2] = this.parse(coords.split("-")[1]);
-        console.log(x1, y1, x2, y2);
-        if (!this.check(x1, y1, x2, y2)) {
-            return "Try again";
+        const [row_f, column_f] = this.parse(coords.split("-")[0]);
+        const [row_t, column_t] = this.parse(coords.split("-")[1]);
+        console.log(`move from ${column_f},${row_f} to ${column_t},${row_t}`);
+        if (!this.check(row_f, column_f, row_t, column_t)) {
+            return `Failed`;
         }
-        this.board[x2][y2] = this.board[x1][y1];
-        this.board[x1][y1] = null;
+        this.board[row_t][column_t] = this.board[row_f][column_f];
+        this.board[row_f][column_f] = null;
         this.turn = this.turn === "W" ? "B" : "W";
-        return "Great Success";
+        return `moved ${coords}`;
     }
-    check(x1, y1, x2, y2) {
-        console.log(x1, y1, x2, y2);
-        if (this.board[x1][y1] == null)
+    check(row_f, column_f, row_t, column_t) {
+        if (this.board[row_f][column_f] == null)
             return false;
         //@ts-ignore
-        if (this.board[x1][y1].getTeam() !== this.turn)
+        if (this.board[row_f][column_f].getTeam() !== this.turn)
             return false;
         // TODO
         return true;
     }
     parse(coord) {
         let res = [0, 0];
-        res[0] = 1 + +coord.charAt(1);
+        res[0] = +coord.charAt(1) - 1;
         res[1] = coord.charCodeAt(0) - 97;
+        res.forEach((i) => {
+            if (i < 0 || i > 7) {
+                console.log(res);
+                throw new Error("invalid coordinates");
+            }
+        });
+        console.log(coord, res);
         return res;
     }
     print() {

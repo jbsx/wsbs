@@ -2,20 +2,20 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var Types;
 (function (Types) {
-    Types[Types["Pawn"] = 0] = "Pawn";
-    Types[Types["Knight"] = 1] = "Knight";
-    Types[Types["Bishop"] = 2] = "Bishop";
-    Types[Types["Rook"] = 3] = "Rook";
-    Types[Types["Queen"] = 4] = "Queen";
-    Types[Types["King"] = 5] = "King";
+    Types[Types["P"] = 0] = "P";
+    Types[Types["N"] = 1] = "N";
+    Types[Types["B"] = 2] = "B";
+    Types[Types["R"] = 3] = "R";
+    Types[Types["Q"] = 4] = "Q";
+    Types[Types["K"] = 5] = "K";
 })(Types || (Types = {}));
 const pieceval = {
-    Pawn: 1,
-    Knight: 3,
-    Bishop: 3,
-    Rook: 5,
-    Queen: 9,
-    King: Infinity,
+    P: 1,
+    N: 3,
+    B: 3,
+    R: 5,
+    Q: 9,
+    K: Infinity,
 };
 class Piece {
     constructor(team, piecetype) {
@@ -24,9 +24,7 @@ class Piece {
         this.value = pieceval[this.piecetype];
     }
     upgrade(piecetype) {
-        if (this.piecetype !== "Pawn" ||
-            piecetype === "Pawn" ||
-            piecetype === "King") {
+        if (this.piecetype !== "P" || piecetype === "P" || piecetype === "K") {
             return;
         }
         this.piecetype = piecetype;
@@ -42,11 +40,7 @@ class Piece {
         return this.value;
     }
     print() {
-        let res = this.team.charAt(0) + this.piecetype.charAt(0);
-        if (this.piecetype === "Knight") {
-            return res.replace(/k/gi, "N");
-        }
-        return res;
+        return this.team + this.piecetype;
     }
     // test function
     log() {
